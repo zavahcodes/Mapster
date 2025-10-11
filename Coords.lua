@@ -93,11 +93,16 @@ function Coords:OnEnable()
 
 		cursortext = display:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 		playertext = display:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+		
+		-- Make text objects accessible for scaling
+		self.cursortext = cursortext
+		self.playertext = playertext
 
 		self:UpdateMapsize(Mapster.miniMap)
 	end
 	display:SetScript("OnUpdate", OnUpdate)
-	if Mapster.bordersVisible then
+	-- Always show coordinates in mini mode, regardless of border visibility
+	if Mapster.bordersVisible or Mapster.miniMap then
 		display:Show()
 	else
 		display:Hide()
@@ -132,7 +137,8 @@ end
 
 function Coords:BorderVisibilityChanged(visible)
 	if not display then return end
-	if visible then
+	-- Always show coordinates in mini mode, regardless of border visibility
+	if visible or Mapster.miniMap then
 		display:Show()
 	else
 		display:Hide()
@@ -170,5 +176,38 @@ function OnUpdate()
 		playertext:SetText("")
 	else
 		playertext:SetFormattedText(text, player, 100 * px, 100 * py)
+	end
+end
+
+function Coords:UpdateTextScale(scale)
+	-- Store original font sizes if not already stored
+	if not self.originalCursorFontSize and self.cursortext then
+		local font, size, flags = self.cursortext:GetFont()
+		if font and size then
+			self.originalCursorFontSize = size
+			self.cursorFont = font
+			self.cursorFlags = flags
+		end
+	end
+	
+	if not self.originalPlayerFontSize and self.playertext then
+		local font, size, flags = self.playertext:GetFont()
+		if font and size then
+			self.originalPlayerFontSize = size
+			self.playerFont = font
+			self.playerFlags = flags
+		end
+	end
+	
+	-- Apply scale to cursor text
+	if self.cursortext and self.originalCursorFontSize then
+		local newSize = math.floor(self.originalCursorFontSize * scale + 0.5)
+		self.cursortext:SetFont(self.cursorFont, newSize, self.cursorFlags)
+	end
+	
+	-- Apply scale to player text
+	if self.playertext and self.originalPlayerFontSize then
+		local newSize = math.floor(self.originalPlayerFontSize * scale + 0.5)
+		self.playertext:SetFont(self.playerFont, newSize, self.playerFlags)
 	end
 end

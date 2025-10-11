@@ -34,12 +34,13 @@ local defaults = {
 			alpha = 0.9,
 			hideBorder = true,
 			disableMouse = true,
+			textScale = 1.0,
 		}
 	}
 }
 
 -- Variables that are changed on "mini" mode
-local miniList = { x = true, y = true, point = true, scale = true, alpha = true, hideBorder = true, disableMouse = true }
+local miniList = { x = true, y = true, point = true, scale = true, alpha = true, hideBorder = true, disableMouse = true, textScale = true }
 
 local db_
 local db = setmetatable({}, {
@@ -146,6 +147,7 @@ function Mapster:OnEnable()
 	wmfOnShow(WorldMapFrame)
 	hooksecurefunc(WorldMapTooltip, "Show", function(self)
 		self:SetFrameStrata("TOOLTIP")
+		Mapster:UpdateWorldMapTooltipScale()
 	end)
 
 	tinsert(UISpecialFrames, "WorldMapFrame")
@@ -374,6 +376,8 @@ function Mapster:SizeUp()
 	self:WorldMapFrame_DisplayQuests()
 
 	self.optionsButton:SetPoint("TOPRIGHT", WorldMapPositioningGuide, "TOPRIGHT", -43, -2)
+	
+	self:UpdateTextScale()
 end
 
 function Mapster:SizeDown()
@@ -424,6 +428,8 @@ function Mapster:SizeDown()
 	--WorldMapQuestShowObjectives_AdjustPosition()
 
 	self.optionsButton:SetPoint("TOPRIGHT", WorldMapFrameMiniBorderRight, "TOPRIGHT", -93, -2)
+	
+	self:UpdateTextScale()
 end
 
 local function getZoneId()
@@ -506,10 +512,60 @@ end
 
 function Mapster:SetScale()
 	WorldMapFrame:SetScale(db.scale)
+	self:UpdateWorldMapTooltipScale()
+	self:UpdateTextScale()
 end
 
 function Mapster:SetPosition()
 	LibWindow.RestorePosition(WorldMapFrame)
+end
+
+function Mapster:UpdateWorldMapTooltipScale()
+	if not WorldMapTooltip then return end
+	local mapScale = WorldMapFrame:GetScale() or 1
+	if self.miniMap then
+		if mapScale == 0 then mapScale = 1 end
+		WorldMapTooltip:SetScale(1 / mapScale)
+	else
+		WorldMapTooltip:SetScale(1)
+	end
+end
+
+function Mapster:UpdateTextScale()
+	local textScale = 1.0
+	if self.miniMap then
+		textScale = db.textScale or 1.0
+	end
+	
+	-- Update zone title text - use font size instead of SetScale
+	if WorldMapFrameTitle then
+		-- Store original font size if not already stored
+		if not self.originalTitleFontSize then
+			local font, size, flags = WorldMapFrameTitle:GetFont()
+			if font and size then
+				self.originalTitleFontSize = size
+				self.titleFont = font
+				self.titleFlags = flags
+			end
+		end
+		
+		-- Apply scale to title
+		if self.originalTitleFontSize then
+			local newSize = math.floor(self.originalTitleFontSize * textScale + 0.5)
+			WorldMapFrameTitle:SetFont(self.titleFont, newSize, self.titleFlags)
+		end
+	end
+	
+	-- Update track quest text - keep using SetScale since it works
+	if WorldMapTrackQuest and WorldMapTrackQuest.SetScale then
+		WorldMapTrackQuest:SetScale(textScale)
+	end
+	
+	-- Update coordinate text from Coords module if exists
+	local coordsModule = self:GetModule("Coords", true)
+	if coordsModule and coordsModule:IsEnabled() and coordsModule.UpdateTextScale then
+		coordsModule:UpdateTextScale(textScale)
+	end
 end
 
 function Mapster:GetModuleEnabled(module)
@@ -631,14 +687,9 @@ local function hasOverlays()
 end
 
 function Mapster:UpdateDetailTiles()
-	if db.hideBorder and GetCurrentMapZone() > 0 and hasOverlays() then
-		for i=1, NUM_WORLDMAP_DETAIL_TILES do
-			_G["WorldMapDetailTile"..i]:Hide()
-		end
-	else
-		for i=1, NUM_WORLDMAP_DETAIL_TILES do
-			_G["WorldMapDetailTile"..i]:Show()
-		end
+	-- Function disabled - always show detail tiles
+	for i=1, NUM_WORLDMAP_DETAIL_TILES do
+		_G["WorldMapDetailTile"..i]:Show()
 	end
 end
 

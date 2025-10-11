@@ -89,13 +89,21 @@ local function getOptions()
 							min = 0.1, max = 2, bigStep = 0.01,
 							isPercent = true,
 						},
+						mini_textScale = {
+							order = 8,
+							name = L["Minimized Text Scale"],
+							desc = L["Scale of text elements (zone name, track quest, coordinates) in minimized mode."],
+							type = "range",
+							min = 0.5, max = 2, bigStep = 0.05,
+							isPercent = true,
+						},
 						nl = {
-							order = 10,
+							order = 12,
 							type = "description",
 							name = "",
 						},
 						arrowScale = {
-							order = 11,
+							order = 13,
 							name = L["PlayerArrow Scale"],
 							desc = L["Adjust the size of the Player Arrow on the Map for better visibility."],
 							type = "range",
