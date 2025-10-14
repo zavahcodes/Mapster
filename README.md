@@ -70,6 +70,7 @@ Mapster is a simple yet powerful addon for modifying the World of Warcraft world
   - Hide completely
   - Only blobs on world map
   - Blobs and full panels
+- **Hide Quest Blobs**: Option to hide the semi-transparent quest area blobs while keeping the numbered POI icons visible (enabled by default)
 - **Mouse Interactivity Control**: Option to make the map non-interactive (click-through)
 - **Profiles**: Complete profile system using AceDB
   - Create different configurations for different characters

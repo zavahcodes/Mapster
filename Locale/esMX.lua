@@ -47,6 +47,8 @@ if not L then return end
 -- L["Player"] = "Player"
 -- L["PlayerArrow Scale"] = "PlayerArrow Scale"
 -- L["POI Scale"] = "POI Scale"
+L["Hide Quest Blobs"] = "Ocultar Áreas de Misión"
+L["Hide the semi-transparent quest area blobs, but keep the numbered POI icons visible on the map."] = "Oculta las áreas semitransparentes de misiones, pero mantiene visibles los iconos POI numerados en el mapa."
 -- L["Quest Objectives"] = "Quest Objectives"
 -- L["Reset FogClear Data"] = "Reset FogClear Data"
 -- L["Scale"] = "Scale"

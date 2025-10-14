@@ -118,6 +118,16 @@ local function getOptions()
 							min = 0.1, max = 2, bigStep = 0.01,
 							isPercent = true,
 						},
+						hideQuestBlobs = {
+							order = 14,
+							type = "toggle",
+							name = L["Hide Quest Blobs"],
+							desc = L["Hide the semi-transparent quest area blobs, but keep the numbered POI icons visible on the map."],
+							set = function(info, value)
+								Mapster.db.profile.hideQuestBlobs = value
+								Mapster:UpdateQuestBlobVisibility()
+							end,
+						},
 						nl2 = {
 							order = 20,
 							type = "description",
