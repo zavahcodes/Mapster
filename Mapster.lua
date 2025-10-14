@@ -14,6 +14,7 @@ local defaults = {
 		hideMapButton = false,
 		arrowScale = 0.88,
 		questObjectives = 2,
+		hideQuestBlobs = true,
 		modules = {
 			['*'] = true,
 		},
@@ -176,6 +177,10 @@ function Mapster:OnEnable()
 	self:SecureHook("WorldMapFrame_SetPOIMaxBounds")
 	WorldMapFrame_SetPOIMaxBounds()
 
+	-- Hook to hide quest blobs when enabled
+	self:SecureHook(WorldMapBlobFrame, "DrawQuestBlob", "HideQuestBlobsIfEnabled")
+	self:UpdateQuestBlobVisibility()
+
 	if vis then
 		ShowUIPanel(WorldMapFrame)
 	end
@@ -215,7 +220,7 @@ function Mapster:PLAYER_REGEN_ENABLED()
 	WorldMapBlobFrame.Hide = nil
 	WorldMapBlobFrame.Show = nil
 	WorldMapBlobFrame.SetScale = nil
-	if blobWasVisible then
+	if blobWasVisible and not db.hideQuestBlobs then
 		WorldMapBlobFrame:Show()
 		updateFrame:SetScript("OnUpdate", restoreBlobs)
 	end
@@ -225,7 +230,7 @@ function Mapster:PLAYER_REGEN_ENABLED()
 		blobNewScale = nil
 	end
 
-	if WorldMapQuestScrollChildFrame.selected then
+	if WorldMapQuestScrollChildFrame.selected and not db.hideQuestBlobs then
 		WorldMapBlobFrame:DrawQuestBlob(WorldMapQuestScrollChildFrame.selected.questId, false)
 	end
 end
@@ -256,6 +261,17 @@ function Mapster:WorldMapFrame_DisplayQuestPOI(questFrame, isComplete)
 		end
 		questFrame.poiIcon:SetPoint("CENTER", "WorldMapPOIFrame", "TOPLEFT", posX / db.poiScale, posY / db.poiScale)
 		questFrame.poiIcon:SetScale(db.poiScale)
+		
+		-- FIX: Asegurar que el tooltip se oculta correctamente cuando el mouse sale del POI
+		-- El problema ocurre cuando la escala del POI cambia y la hitbox no coincide con el área visual
+		if not questFrame.poiIconTooltipFixed then
+			questFrame.poiIcon:HookScript("OnLeave", function(self)
+				if WorldMapTooltip then
+					WorldMapTooltip:Hide()
+				end
+			end)
+			questFrame.poiIconTooltipFixed = true
+		end
 	end
 end
 
@@ -302,6 +318,7 @@ function Mapster:Refresh()
 	self:UpdateBorderVisibility()
 	self:UpdateMouseInteractivity()
 	self:UpdateModuleMapsizes()
+	self:UpdateQuestBlobVisibility()
 	WorldMapFrame_UpdateQuests()
 end
 
@@ -323,6 +340,7 @@ function Mapster:ToggleMapSize()
 
 	self:UpdateBorderVisibility()
 	self:UpdateMouseInteractivity()
+	self:UpdateQuestBlobVisibility()
 
 	ToggleFrame(WorldMapFrame)
 	WorldMapFrame_UpdateQuests()
@@ -491,6 +509,9 @@ function dropdownScaleFix(self)
 end
 
 function Mapster:ShowBlobs()
+	-- Don't show blobs if hideQuestBlobs is enabled
+	if db.hideQuestBlobs then return end
+	
 	WorldMapBlobFrame_CalculateHitTranslations()
 	if WORLDMAP_SETTINGS.selectedQuest and not WORLDMAP_SETTINGS.selectedQuest.completed then
 		WorldMapBlobFrame:DrawQuestBlob(WORLDMAP_SETTINGS.selectedQuest.questId, true)
@@ -500,6 +521,23 @@ end
 function Mapster:HideBlobs()
 	if WORLDMAP_SETTINGS.selectedQuest then
 		WorldMapBlobFrame:DrawQuestBlob(WORLDMAP_SETTINGS.selectedQuest.questId, false)
+	end
+end
+
+function Mapster:HideQuestBlobsIfEnabled()
+	if db.hideQuestBlobs then
+		WorldMapBlobFrame:Hide()
+	end
+end
+
+function Mapster:UpdateQuestBlobVisibility()
+	if db.hideQuestBlobs then
+		WorldMapBlobFrame:Hide()
+	else
+		-- Let the normal game logic handle visibility
+		if WORLDMAP_SETTINGS.selectedQuest and not WORLDMAP_SETTINGS.selectedQuest.completed then
+			WorldMapBlobFrame:Show()
+		end
 	end
 end
 
