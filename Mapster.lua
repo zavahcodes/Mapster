@@ -495,6 +495,7 @@ function wmfOnHide(frame)
 end
 
 function wmfStartMoving(frame)
+	print("DEBUG wmfStartMoving called")
 	Mapster:HideBlobs()
 
 	frame:StartMoving()
@@ -901,13 +902,22 @@ function Mapster:UpdateMapElements()
 end
 
 function Mapster:UpdateMouseInteractivity()
+	print(string.format("DEBUG UpdateMouseInteractivity: disableMouse=%s, miniMap=%s", 
+		tostring(db.disableMouse), tostring(self.miniMap)))
 	if db.disableMouse then
 		WorldMapButton:EnableMouse(false)
 		WorldMapFrame:EnableMouse(false)
+		print("DEBUG: Mouse DISABLED on WorldMapFrame")
 	else
 		WorldMapButton:EnableMouse(true)
 		WorldMapFrame:EnableMouse(true)
+		print("DEBUG: Mouse ENABLED on WorldMapFrame")
 	end
+	
+	-- Verify drag registration
+	local registered = WorldMapFrame:IsMouseEnabled()
+	local movable = WorldMapFrame:IsMovable()
+	print(string.format("DEBUG: Frame IsMouseEnabled=%s, IsMovable=%s", tostring(registered), tostring(movable)))
 end
 
 function Mapster:RefreshQuestObjectivesDisplay()
