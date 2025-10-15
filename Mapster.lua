@@ -472,6 +472,7 @@ local oldBFMOnUpdate
 function wmfOnShow(frame)
 	Mapster:SetStrata()
 	Mapster:SetScale()
+	Mapster:SetPosition()
 	realZone = getZoneId()
 	if BattlefieldMinimap then
 		oldBFMOnUpdate = BattlefieldMinimap:GetScript("OnUpdate")
