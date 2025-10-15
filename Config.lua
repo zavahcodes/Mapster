@@ -137,6 +137,7 @@ local function getOptions()
 							order = 21,
 							type = "toggle",
 							name = L["Hide Map Button"],
+							hidden = true,  -- Hidden from options panel
 						},
 						nl3 = {
 							order = 30,
@@ -149,24 +150,28 @@ local function getOptions()
 							name = L["Hide Border"],
 							desc = L["Hide the borders of the big map."],
 							disabled = true,
+							hidden = true,  -- Hidden from options panel
 						},
 						mini_hideBorder = {
 							order = 32,
 							type = "toggle",
 							name = L["(Mini) Hide Border"],
 							desc = L["Hide the borders of the minimized map."],
+							hidden = true,  -- Hidden from options panel
 						},
 						disableMouse = {
 							order = 33,
 							type = "toggle",
 							name = L["Disable Mouse"],
 							desc = L["Disable the mouse interactivity of the main map, eg. to change zones."],
+							hidden = true,  -- Hidden from options panel
 						},
 						mini_disableMouse = {
 							order = 34,
 							type = "toggle",
 							name = L["(Mini) Disable Mouse"],
 							desc = L["Disable the mouse interactivity of the main map when in minimized mode, eg. to change zones."],
+							hidden = true,  -- Hidden from options panel
 						},
 					},
 				},
