@@ -176,6 +176,14 @@ function Mapster:OnEnable()
 	self:SecureHook("WorldMapFrame_DisplayQuests")
 	self:SecureHook("WorldMapFrame_SetPOIMaxBounds")
 	WorldMapFrame_SetPOIMaxBounds()
+	
+	-- Hook frame movement methods to debug
+	self:SecureHook(WorldMapFrame, "StartMoving", function() 
+		print("DEBUG: WorldMapFrame:StartMoving() called")
+	end)
+	self:SecureHook(WorldMapFrame, "StopMovingOrSizing", function()
+		print("DEBUG: WorldMapFrame:StopMovingOrSizing() called")
+	end)
 
 	-- Hook to hide quest blobs when enabled
 	self:SecureHook(WorldMapBlobFrame, "DrawQuestBlob", "HideQuestBlobsIfEnabled")
