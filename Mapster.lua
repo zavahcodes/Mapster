@@ -569,7 +569,46 @@ function Mapster:SetScale()
 end
 
 function Mapster:SetPosition()
-	LibWindow.RestorePosition(WorldMapFrame)
+	if self.miniMap then
+		self:RestoreMiniPosition(WorldMapFrame)
+	else
+		LibWindow.RestorePosition(WorldMapFrame)
+	end
+end
+
+function Mapster:RestoreMiniPosition(frame)
+	-- Restore position specifically for mini mode
+	local x = db_.mini.x
+	local y = db_.mini.y
+	local point = db_.mini.point
+	local s = db_.mini.scale
+	
+	if s then
+		frame:SetScale(s)
+	else
+		s = frame:GetScale()
+	end
+	
+	if not x or not y then
+		-- Nothing stored yet, use center
+		x = 0
+		y = 0
+		point = "CENTER"
+	end
+	
+	x = x / s
+	y = y / s
+	
+	frame:ClearAllPoints()
+	if not point and y == 0 then
+		point = "CENTER"
+	end
+	
+	if not point then
+		frame:SetPoint("TOPLEFT", frame:GetParent(), "BOTTOMLEFT", x, y)
+	else
+		frame:SetPoint(point, frame:GetParent(), point, x, y)
+	end
 end
 
 function Mapster:SaveMiniPosition(frame)
