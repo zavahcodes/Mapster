@@ -33,7 +33,7 @@ local defaults = {
 			point = "CENTER",
 			scale = 1,
 			alpha = 0.9,
-			hideBorder = true,
+			hideBorder = false,
 			disableMouse = false,
 			textScale = 1.0,
 		}
@@ -151,9 +151,6 @@ function Mapster:OnEnable()
 		Mapster:UpdateWorldMapTooltipScale()
 	end)
 
-	-- Create custom border for mini mode
-	self:CreateMiniBorder()
-
 	tinsert(UISpecialFrames, "WorldMapFrame")
 
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
@@ -170,7 +167,6 @@ function Mapster:OnEnable()
 	self:SetArrow()
 	self:UpdateBorderVisibility()
 	self:UpdateMouseInteractivity()
-	self:UpdateMiniBorder()
 
 	self:SecureHook("WorldMapFrame_DisplayQuestPOI")
 	self:SecureHook("WorldMapFrame_DisplayQuests")
@@ -391,14 +387,6 @@ function Mapster:SizeUp()
 	WorldMapFrameMiniBorderLeft:Hide()
 	WorldMapFrameMiniBorderRight:Hide()
 	WorldMapFrameSizeUpButton:Hide()
-	
-	-- Remove drag handlers from borders (only used in mini mode)
-	WorldMapFrameMiniBorderLeft:SetScript("OnDragStart", nil)
-	WorldMapFrameMiniBorderLeft:SetScript("OnDragStop", nil)
-	WorldMapFrameMiniBorderLeft:RegisterForDrag()
-	WorldMapFrameMiniBorderRight:SetScript("OnDragStart", nil)
-	WorldMapFrameMiniBorderRight:SetScript("OnDragStop", nil)
-	WorldMapFrameMiniBorderRight:RegisterForDrag()
 	-- floor dropdown
 	WorldMapLevelDropDown:SetPoint("TOPRIGHT", WorldMapPositioningGuide, "TOPRIGHT", -50, -35)
 	WorldMapLevelDropDown.header:Show()
@@ -418,7 +406,6 @@ function Mapster:SizeUp()
 	self.optionsButton:SetPoint("TOPRIGHT", WorldMapPositioningGuide, "TOPRIGHT", -43, -2)
 	
 	self:UpdateTextScale()
-	self:UpdateMiniBorder()
 end
 
 function Mapster:SizeDown()
@@ -452,34 +439,6 @@ function Mapster:SizeDown()
 	WorldMapFrameMiniBorderLeft:Show()
 	WorldMapFrameMiniBorderRight:Show()
 	WorldMapFrameSizeUpButton:Show()
-	
-	-- Make the borders draggable to allow moving the map in mini mode
-	-- The borders are purely decorative, so they can safely propagate drag events
-	WorldMapFrameMiniBorderLeft:EnableMouse(true)
-	WorldMapFrameMiniBorderLeft:SetMovable(false)
-	WorldMapFrameMiniBorderLeft:RegisterForDrag("LeftButton")
-	WorldMapFrameMiniBorderLeft:SetScript("OnDragStart", function() 
-		print("DEBUG: Drag started on MiniBorderLeft")
-		WorldMapFrame:StartMoving() 
-	end)
-	WorldMapFrameMiniBorderLeft:SetScript("OnDragStop", function()
-		print("DEBUG: Drag stopped on MiniBorderLeft")
-		wmfStopMoving(WorldMapFrame)
-	end)
-	
-	WorldMapFrameMiniBorderRight:EnableMouse(true)
-	WorldMapFrameMiniBorderRight:SetMovable(false)
-	WorldMapFrameMiniBorderRight:RegisterForDrag("LeftButton")
-	WorldMapFrameMiniBorderRight:SetScript("OnDragStart", function() 
-		print("DEBUG: Drag started on MiniBorderRight")
-		WorldMapFrame:StartMoving() 
-	end)
-	WorldMapFrameMiniBorderRight:SetScript("OnDragStop", function()
-		print("DEBUG: Drag stopped on MiniBorderRight")
-		wmfStopMoving(WorldMapFrame)
-	end)
-	
-	print("DEBUG SizeDown: Drag habilitado en borders")
 	-- floor dropdown
 	WorldMapLevelDropDown:SetPoint("TOPRIGHT", WorldMapPositioningGuide, "TOPRIGHT", -441, -35)
 	WorldMapLevelDropDown:SetFrameLevel(WORLDMAP_POI_FRAMELEVEL + 2)
@@ -499,7 +458,6 @@ function Mapster:SizeDown()
 	self.optionsButton:SetPoint("TOPRIGHT", WorldMapFrameMiniBorderRight, "TOPRIGHT", -93, -2)
 	
 	self:UpdateTextScale()
-	self:UpdateMiniBorder()
 end
 
 local function getZoneId()
@@ -774,95 +732,6 @@ function Mapster:UpdateTextScale()
 	local coordsModule = self:GetModule("Coords", true)
 	if coordsModule and coordsModule:IsEnabled() and coordsModule.UpdateTextScale then
 		coordsModule:UpdateTextScale(textScale)
-	end
-end
-
-function Mapster:CreateMiniBorder()
-	if self.miniBorder then return end
-	
-	-- Create the border frame that stays in a fixed position
-	local border = CreateFrame("Frame", "MapsterMiniBorder", WorldMapFrame)
-	border:SetFrameLevel(WorldMapFrame:GetFrameLevel() + 20)
-	
-	-- Create border textures (thick black border with 75% transparency)
-	local borderSize = 6
-	local alpha = 0.75
-	
-	-- Top border
-	local top = border:CreateTexture(nil, "OVERLAY")
-	top:SetColorTexture(0, 0, 0, alpha)
-	top:SetHeight(borderSize)
-	
-	-- Bottom border
-	local bottom = border:CreateTexture(nil, "OVERLAY")
-	bottom:SetColorTexture(0, 0, 0, alpha)
-	bottom:SetHeight(borderSize)
-	
-	-- Left border
-	local left = border:CreateTexture(nil, "OVERLAY")
-	left:SetColorTexture(0, 0, 0, alpha)
-	left:SetWidth(borderSize)
-	
-	-- Right border
-	local right = border:CreateTexture(nil, "OVERLAY")
-	right:SetColorTexture(0, 0, 0, alpha)
-	right:SetWidth(borderSize)
-	
-	-- Store references
-	self.miniBorder = border
-	self.miniBorderTextures = {top, bottom, left, right}
-	
-	-- Position the border to define the map viewing area (fixed position)
-	self:SetFixedBorderPosition()
-	
-	-- Initially hidden
-	border:Hide()
-end
-
-function Mapster:SetFixedBorderPosition()
-	if not self.miniBorder or not self.miniBorderTextures then return end
-	
-	local top, bottom, left, right = unpack(self.miniBorderTextures)
-	local borderSize = 6
-	
-	-- Define a fixed rectangular area for the map in mini mode
-	-- These coordinates define the "window" through which the map is visible
-	local mapLeft = 21    -- Left edge of map area
-	local mapRight = 595  -- Right edge of map area  
-	local mapTop = -38    -- Top edge of map area
-	local mapBottom = -420 -- Bottom edge of map area
-	
-	-- Clear existing points
-	top:ClearAllPoints()
-	bottom:ClearAllPoints()
-	left:ClearAllPoints()
-	right:ClearAllPoints()
-	
-	-- Position borders to create a fixed viewing window
-	-- Top border
-	top:SetPoint("TOPLEFT", WorldMapFrame, "TOPLEFT", mapLeft - borderSize, mapTop + borderSize)
-	top:SetPoint("TOPRIGHT", WorldMapFrame, "TOPLEFT", mapRight + borderSize, mapTop + borderSize)
-	
-	-- Bottom border
-	bottom:SetPoint("BOTTOMLEFT", WorldMapFrame, "TOPLEFT", mapLeft - borderSize, mapBottom - borderSize)
-	bottom:SetPoint("BOTTOMRIGHT", WorldMapFrame, "TOPLEFT", mapRight + borderSize, mapBottom - borderSize)
-	
-	-- Left border
-	left:SetPoint("TOPLEFT", WorldMapFrame, "TOPLEFT", mapLeft - borderSize, mapTop)
-	left:SetPoint("BOTTOMLEFT", WorldMapFrame, "TOPLEFT", mapLeft - borderSize, mapBottom)
-	
-	-- Right border
-	right:SetPoint("TOPRIGHT", WorldMapFrame, "TOPLEFT", mapRight + borderSize, mapTop)
-	right:SetPoint("BOTTOMRIGHT", WorldMapFrame, "TOPLEFT", mapRight + borderSize, mapBottom)
-end
-
-function Mapster:UpdateMiniBorder()
-	if not self.miniBorder then return end
-	
-	if self.miniMap then
-		self.miniBorder:Show()
-	else
-		self.miniBorder:Hide()
 	end
 end
 
