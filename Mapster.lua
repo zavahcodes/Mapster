@@ -173,16 +173,9 @@ function Mapster:OnEnable()
 	self:SecureHook("WorldMapFrame_SetPOIMaxBounds")
 	WorldMapFrame_SetPOIMaxBounds()
 	
-	-- Hook frame movement methods to debug and ensure save
-	self:SecureHook(WorldMapFrame, "StartMoving", function() 
-		print("DEBUG: WorldMapFrame:StartMoving() called")
-	end)
+	-- Hook frame movement to ensure position is saved
 	self:SecureHook(WorldMapFrame, "StopMovingOrSizing", function(frame)
-		print("DEBUG: WorldMapFrame:StopMovingOrSizing() called")
-		-- If we detect that the frame stopped moving but wmfStopMoving wasn't called,
-		-- we need to save the position here
 		if Mapster.miniMap then
-			print("DEBUG: StopMovingOrSizing hook - Calling SaveMiniPosition")
 			Mapster:SaveMiniPosition(frame)
 		end
 	end)
@@ -333,10 +326,8 @@ function Mapster:Refresh()
 end
 
 function Mapster:ToggleMapSize()
-	print("DEBUG ToggleMapSize: before toggle miniMap = " .. tostring(self.miniMap))
 	self.miniMap = not self.miniMap
 	db.miniMap = self.miniMap
-	print("DEBUG ToggleMapSize: after toggle miniMap = " .. tostring(self.miniMap))
 	ToggleFrame(WorldMapFrame)
 	if self.miniMap then
 		self:SizeDown()
@@ -393,6 +384,10 @@ function Mapster:SizeUp()
 	WorldMapFrameMiniBorderLeft:Hide()
 	WorldMapFrameMiniBorderRight:Hide()
 	WorldMapFrameSizeUpButton:Hide()
+	
+	-- Restore border alpha to normal
+	WorldMapFrameMiniBorderLeft:SetAlpha(1)
+	WorldMapFrameMiniBorderRight:SetAlpha(1)
 	-- floor dropdown
 	WorldMapLevelDropDown:SetPoint("TOPRIGHT", WorldMapPositioningGuide, "TOPRIGHT", -50, -35)
 	WorldMapLevelDropDown.header:Show()
@@ -444,7 +439,11 @@ function Mapster:SizeDown()
 	-- show small window elements
 	WorldMapFrameMiniBorderLeft:Show()
 	WorldMapFrameMiniBorderRight:Show()
-	WorldMapFrameSizeUpButton:Show()
+	WorldMapFrameSizeUpButton:Show()  -- Restore button visibility
+	
+	-- Set border transparency to 0% (fully transparent)
+	WorldMapFrameMiniBorderLeft:SetAlpha(0)
+	WorldMapFrameMiniBorderRight:SetAlpha(0)
 	-- floor dropdown
 	WorldMapLevelDropDown:SetPoint("TOPRIGHT", WorldMapPositioningGuide, "TOPRIGHT", -441, -35)
 	WorldMapLevelDropDown:SetFrameLevel(WORLDMAP_POI_FRAMELEVEL + 2)
@@ -480,7 +479,6 @@ end
 
 local oldBFMOnUpdate
 function wmfOnShow(frame)
-	print("DEBUG wmfOnShow called, miniMap = " .. tostring(Mapster.miniMap))
 	Mapster:SetStrata()
 	Mapster:SetScale()
 	Mapster:SetPosition()
@@ -503,25 +501,16 @@ function wmfOnHide(frame)
 end
 
 function wmfStartMoving(frame)
-	print("DEBUG wmfStartMoving called")
 	Mapster:HideBlobs()
-
 	frame:StartMoving()
 end
 
 function wmfStopMoving(frame)
 	frame:StopMovingOrSizing()
 	
-	print("DEBUG wmfStopMoving: miniMap = " .. tostring(Mapster.miniMap))
-	
-	-- Save position to the correct storage based on miniMap mode
 	if Mapster.miniMap then
-		-- In mini mode, save to mini storage
-		print("DEBUG: Calling SaveMiniPosition")
 		Mapster:SaveMiniPosition(frame)
 	else
-		-- In normal mode, use LibWindow's save
-		print("DEBUG: Calling LibWindow.SavePosition")
 		LibWindow.SavePosition(frame)
 	end
 
@@ -586,25 +575,18 @@ function Mapster:SetScale()
 end
 
 function Mapster:SetPosition()
-	print("DEBUG SetPosition: miniMap = " .. tostring(self.miniMap))
 	if self.miniMap then
-		print("DEBUG: Calling RestoreMiniPosition")
 		self:RestoreMiniPosition(WorldMapFrame)
 	else
-		print("DEBUG: Calling LibWindow.RestorePosition")
 		LibWindow.RestorePosition(WorldMapFrame)
 	end
 end
 
 function Mapster:RestoreMiniPosition(frame)
-	-- Restore position specifically for mini mode
 	local x = db_.mini.x
 	local y = db_.mini.y
 	local point = db_.mini.point
 	local s = db_.mini.scale
-	
-	print(string.format("DEBUG RestoreMiniPosition: x=%s, y=%s, point=%s, scale=%s", 
-		tostring(x), tostring(y), tostring(point), tostring(s)))
 	
 	if s then
 		frame:SetScale(s)
@@ -613,8 +595,6 @@ function Mapster:RestoreMiniPosition(frame)
 	end
 	
 	if not x or not y then
-		-- Nothing stored yet, use center
-		print("DEBUG: No position stored, using CENTER")
 		x = 0
 		y = 0
 		point = "CENTER"
@@ -622,8 +602,6 @@ function Mapster:RestoreMiniPosition(frame)
 	
 	x = x / s
 	y = y / s
-	
-	print(string.format("DEBUG: Setting position to point=%s, x=%.2f, y=%.2f", tostring(point), x, y))
 	
 	frame:ClearAllPoints()
 	if not point and y == 0 then
@@ -638,19 +616,14 @@ function Mapster:RestoreMiniPosition(frame)
 end
 
 function Mapster:SaveMiniPosition(frame)
-	-- Save position specifically for mini mode
 	local parent = frame:GetParent() or UIParent
 	local s = frame:GetScale()
 	local left, top = frame:GetLeft() * s, frame:GetTop() * s
 	local right, bottom = frame:GetRight() * s, frame:GetBottom() * s
 	local pwidth, pheight = parent:GetWidth(), parent:GetHeight()
 
-	print(string.format("DEBUG SaveMiniPosition: scale=%.2f, left=%.2f, top=%.2f, right=%.2f, bottom=%.2f", 
-		s, left or 0, top or 0, right or 0, bottom or 0))
-
 	local x, y, point
 
-	-- Calculate best anchor point
 	if left < (pwidth - right) and left < math.abs((left + right) / 2 - pwidth / 2) then
 		x = left
 		point = "LEFT"
@@ -676,19 +649,11 @@ function Mapster:SaveMiniPosition(frame)
 		point = "CENTER"
 	end
 
-	print(string.format("DEBUG: Saving to mini storage: x=%.2f, y=%.2f, point=%s, scale=%.2f", 
-		x, y, point, s))
-
-	-- Save to mini storage
 	db_.mini.x = x
 	db_.mini.y = y
 	db_.mini.point = point
 	db_.mini.scale = s
 
-	print(string.format("DEBUG: Verification - db_.mini.x=%.2f, db_.mini.y=%.2f, db_.mini.point=%s", 
-		db_.mini.x or 0, db_.mini.y or 0, tostring(db_.mini.point)))
-
-	-- Reposition with saved coordinates
 	frame:ClearAllPoints()
 	frame:SetPoint(point, frame:GetParent(), point, x / s, y / s)
 end
@@ -821,22 +786,13 @@ function Mapster:UpdateMapElements()
 end
 
 function Mapster:UpdateMouseInteractivity()
-	print(string.format("DEBUG UpdateMouseInteractivity: disableMouse=%s, miniMap=%s", 
-		tostring(db.disableMouse), tostring(self.miniMap)))
 	if db.disableMouse then
 		WorldMapButton:EnableMouse(false)
 		WorldMapFrame:EnableMouse(false)
-		print("DEBUG: Mouse DISABLED on WorldMapFrame")
 	else
 		WorldMapButton:EnableMouse(true)
 		WorldMapFrame:EnableMouse(true)
-		print("DEBUG: Mouse ENABLED on WorldMapFrame")
 	end
-	
-	-- Verify drag registration
-	local registered = WorldMapFrame:IsMouseEnabled()
-	local movable = WorldMapFrame:IsMovable()
-	print(string.format("DEBUG: Frame IsMouseEnabled=%s, IsMovable=%s", tostring(registered), tostring(movable)))
 end
 
 function Mapster:RefreshQuestObjectivesDisplay()
