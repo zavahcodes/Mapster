@@ -406,6 +406,13 @@ function Mapster:SizeUp()
 
 	self.optionsButton:SetPoint("TOPRIGHT", WorldMapPositioningGuide, "TOPRIGHT", -43, -2)
 	
+	-- Restore Mapster button transparency to 100% and enable in normal mode
+	if self.optionsButton then
+		self.optionsButton:SetAlpha(1)
+		self.optionsButton:EnableMouse(true)
+		self.optionsButton:Enable()
+	end
+	
 	self:UpdateTextScale()
 end
 
@@ -461,6 +468,13 @@ function Mapster:SizeDown()
 	--WorldMapQuestShowObjectives_AdjustPosition()
 
 	self.optionsButton:SetPoint("TOPRIGHT", WorldMapFrameMiniBorderRight, "TOPRIGHT", -93, -2)
+	
+	-- Set Mapster button transparency to 0% and disable in mini mode
+	if self.optionsButton then
+		self.optionsButton:SetAlpha(0)
+		self.optionsButton:EnableMouse(false)
+		self.optionsButton:Disable()
+	end
 	
 	self:UpdateTextScale()
 end
