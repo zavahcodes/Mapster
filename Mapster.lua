@@ -25,7 +25,7 @@ local defaults = {
 		poiScale = 0.8,
 		alpha = 1,
 		hideBorder = true,  -- Hidden option, disabled by default
-		disableMouse = true,  -- Hidden option, disabled by default
+		disableMouse = false,  -- Mouse interaction enabled by default
 		miniMap = false,
 		mini = {
 			x = 0,
@@ -34,7 +34,7 @@ local defaults = {
 			scale = 1,
 			alpha = 0.9,
 			hideBorder = true,  -- Hidden option, disabled by default
-			disableMouse = true,  -- Hidden option, disabled by default
+			disableMouse = false,  -- Mouse interaction enabled by default
 			textScale = 1.0,
 		}
 	}
