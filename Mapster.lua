@@ -498,7 +498,15 @@ end
 
 function wmfStopMoving(frame)
 	frame:StopMovingOrSizing()
-	LibWindow.SavePosition(frame)
+	
+	-- Save position to the correct storage based on miniMap mode
+	if Mapster.miniMap then
+		-- In mini mode, save to mini storage
+		Mapster:SaveMiniPosition(frame)
+	else
+		-- In normal mode, use LibWindow's save
+		LibWindow.SavePosition(frame)
+	end
 
 	Mapster:ShowBlobs()
 end
@@ -562,6 +570,53 @@ end
 
 function Mapster:SetPosition()
 	LibWindow.RestorePosition(WorldMapFrame)
+end
+
+function Mapster:SaveMiniPosition(frame)
+	-- Save position specifically for mini mode
+	local parent = frame:GetParent() or UIParent
+	local s = frame:GetScale()
+	local left, top = frame:GetLeft() * s, frame:GetTop() * s
+	local right, bottom = frame:GetRight() * s, frame:GetBottom() * s
+	local pwidth, pheight = parent:GetWidth(), parent:GetHeight()
+
+	local x, y, point
+
+	-- Calculate best anchor point
+	if left < (pwidth - right) and left < math.abs((left + right) / 2 - pwidth / 2) then
+		x = left
+		point = "LEFT"
+	elseif (pwidth - right) < math.abs((left + right) / 2 - pwidth / 2) then
+		x = right - pwidth
+		point = "RIGHT"
+	else
+		x = (left + right) / 2 - pwidth / 2
+		point = ""
+	end
+
+	if bottom < (pheight - top) and bottom < math.abs((bottom + top) / 2 - pheight / 2) then
+		y = bottom
+		point = "BOTTOM" .. point
+	elseif (pheight - top) < math.abs((bottom + top) / 2 - pheight / 2) then
+		y = top - pheight
+		point = "TOP" .. point
+	else
+		y = (bottom + top) / 2 - pheight / 2
+	end
+
+	if point == "" then
+		point = "CENTER"
+	end
+
+	-- Save to mini storage
+	db_.mini.x = x
+	db_.mini.y = y
+	db_.mini.point = point
+	db_.mini.scale = s
+
+	-- Reposition with saved coordinates
+	frame:ClearAllPoints()
+	frame:SetPoint(point, frame:GetParent(), point, x / s, y / s)
 end
 
 function Mapster:UpdateWorldMapTooltipScale()
