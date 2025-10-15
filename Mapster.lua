@@ -173,12 +173,18 @@ function Mapster:OnEnable()
 	self:SecureHook("WorldMapFrame_SetPOIMaxBounds")
 	WorldMapFrame_SetPOIMaxBounds()
 	
-	-- Hook frame movement methods to debug
+	-- Hook frame movement methods to debug and ensure save
 	self:SecureHook(WorldMapFrame, "StartMoving", function() 
 		print("DEBUG: WorldMapFrame:StartMoving() called")
 	end)
-	self:SecureHook(WorldMapFrame, "StopMovingOrSizing", function()
+	self:SecureHook(WorldMapFrame, "StopMovingOrSizing", function(frame)
 		print("DEBUG: WorldMapFrame:StopMovingOrSizing() called")
+		-- If we detect that the frame stopped moving but wmfStopMoving wasn't called,
+		-- we need to save the position here
+		if Mapster.miniMap then
+			print("DEBUG: StopMovingOrSizing hook - Calling SaveMiniPosition")
+			Mapster:SaveMiniPosition(frame)
+		end
 	end)
 
 	-- Hook to hide quest blobs when enabled
